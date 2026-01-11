@@ -43,6 +43,7 @@ def create_app(config_name='default'):
     def inject_config():
         return {
             'config': app.config,
+            'mailersend_configured': bool(app.config.get('MAILERSEND_API_KEY')),
             'get_status_color': get_status_color,
             'format_datetime': format_datetime,
             'calculate_campaign_progress': calculate_campaign_progress
@@ -335,41 +336,45 @@ def create_app(config_name='default'):
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)}), 500
     
-    # Webhook endpoint for SendGrid
-    @app.route('/webhook/sendgrid', methods=['POST'])
-    def sendgrid_webhook():
+    # Webhook endpoint for MailerSend
+    @app.route('/webhook/mailersend', methods=['POST'])
+    def mailersend_webhook():
         events = request.get_json()
         
         if not events:
             return jsonify({'status': 'error'}), 400
+        
+        # MailerSend sends events as a single object or array
+        if isinstance(events, dict):
+            events = [events]
         
         for event in events:
             # Store webhook event
             webhook_event = WebhookEvent(
                 event_type=event.get('event'),
                 email=event.get('email'),
-                sendgrid_message_id=event.get('sg_message_id'),
+                sendgrid_message_id=event.get('message_id'),  # Keep field name for compatibility
                 event_data=event
             )
             db.session.add(webhook_event)
             
             # Update email log if message_id exists
-            message_id = event.get('sg_message_id')
+            message_id = event.get('message_id')
             if message_id:
                 email_log = EmailLog.query.filter_by(sendgrid_message_id=message_id).first()
                 if email_log:
                     # Update status based on event type
                     event_type = event.get('event')
-                    if event_type == 'delivered':
+                    if event_type == 'delivery.succeeded':
                         email_log.status = 'delivered'
                         email_log.delivered_at = datetime.utcnow()
-                    elif event_type == 'open':
+                    elif event_type == 'email.opened':
                         email_log.status = 'opened'
                         email_log.opened_at = datetime.utcnow()
-                    elif event_type == 'click':
+                    elif event_type == 'email.clicked':
                         email_log.status = 'clicked'
                         email_log.clicked_at = datetime.utcnow()
-                    elif event_type == 'bounce':
+                    elif event_type in ['delivery.failed', 'bounce']:
                         email_log.status = 'bounced'
                         email_log.bounced_at = datetime.utcnow()
                     elif event_type == 'unsubscribe':

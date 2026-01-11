@@ -8,8 +8,8 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///email_shooter.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # SendGrid Configuration
-    SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+    # MailerSend Configuration
+    MAILERSEND_API_KEY = os.environ.get('MAILERSEND_API_KEY')
     FROM_EMAIL = os.environ.get('FROM_EMAIL')
     FROM_NAME = os.environ.get('FROM_NAME', 'Email Shooter')
     

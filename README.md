@@ -1,6 +1,6 @@
 # Email Shooter Application
 
-A comprehensive email marketing application built with Python, Flask, and SendGrid for sending automated, templated emails to opted-in subscribers.
+A comprehensive email marketing application built with Python, Flask, and MailerSend for sending automated, templated emails to opted-in subscribers.
 
 ## Features
 
@@ -10,7 +10,7 @@ A comprehensive email marketing application built with Python, Flask, and SendGr
 - **Personalization**: Dynamic content insertion using template variables
 - **Scheduling**: Automatic email sending with APScheduler
 - **Analytics**: Track delivery, open, click, and unsubscribe rates
-- **Webhooks**: Handle SendGrid events for real-time tracking
+- **Webhooks**: Handle MailerSend events for real-time tracking
 - **Compliance**: CAN-SPAM compliant with unsubscribe links
 - **CLI Interface**: Command-line tools for campaign management
 - **Docker Support**: Containerized deployment ready
@@ -20,7 +20,7 @@ A comprehensive email marketing application built with Python, Flask, and SendGr
 ### Prerequisites
 
 - Python 3.8+
-- SendGrid API key
+- MailerSend API key
 - PostgreSQL (optional, SQLite supported)
 
 ### Quick Start
@@ -63,8 +63,8 @@ Create a `.env` file with the following variables:
 DATABASE_URL=sqlite:///email_shooter.db
 # For PostgreSQL: postgresql://username:password@localhost/dbname
 
-# SendGrid
-SENDGRID_API_KEY=your_sendgrid_api_key
+# MailerSend
+MAILERSEND_API_KEY=your_mailersend_api_key
 FROM_EMAIL=noreply@yourdomain.com
 FROM_NAME=Your Company Name
 
@@ -81,12 +81,12 @@ UNSUBSCRIBE_URL=http://localhost:5000/unsubscribe
 SCHEDULER_ENABLED=true
 ```
 
-### SendGrid Setup
+### MailerSend Setup
 
-1. Create a SendGrid account
+1. Create a MailerSend account
 2. Generate an API key
-3. Configure sender authentication
-4. Set up webhook endpoints at `/webhook/sendgrid`
+3. Configure your domain and sender identity
+4. Set up webhook endpoints at `/webhook/mailersend`
 
 ## Usage
 
@@ -149,7 +149,7 @@ Use these variables in your email templates:
 
 ### Webhook Endpoints
 
-- `POST /webhook/sendgrid` - Receive SendGrid events
+- `POST /webhook/mailersend` - Receive MailerSend events
 
 ### API Endpoints
 
@@ -227,7 +227,7 @@ Use these variables in your email templates:
 ### System Monitoring
 
 - Database connection health
-- SendGrid API status
+- MailerSend API status
 - Email queue status
 - Error tracking
 
@@ -235,7 +235,7 @@ Use these variables in your email templates:
 
 ### Common Issues
 
-1. **SendGrid API errors:**
+1. **MailerSend API errors:**
    - Check API key validity
    - Verify sender authentication
    - Check rate limits

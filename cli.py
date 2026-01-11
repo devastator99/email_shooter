@@ -281,7 +281,7 @@ def status():
         click.echo("Email Shooter Status:")
         click.echo(f"  Environment: {app.config.get('FLASK_ENV', 'development')}")
         click.echo(f"  Database: {app.config['SQLALCHEMY_DATABASE_URI']}")
-        click.echo(f"  SendGrid API: {'Configured' if app.config.get('SENDGRID_API_KEY') else 'Not configured'}")
+        click.echo(f"  MailerSend API: {'Configured' if app.config.get('MAILERSEND_API_KEY') else 'Not configured'}")
         click.echo(f"  From Email: {app.config.get('FROM_EMAIL', 'Not set')}")
         
         # Count records

@@ -2,14 +2,15 @@ import os
 import time
 from datetime import datetime
 from flask import current_app
-from mailersend import emails
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 from jinja2 import Template
 from models import db, Subscriber, Campaign, EmailLog
 from config import Config
 
 class EmailSender:
     def __init__(self):
-        self.mailer = emails.NewEmail(Config.MAILERSEND_API_KEY)
+        self.sg = SendGridAPIClient(api_key=Config.SENDGRID_API_KEY)
         self.from_email = Config.FROM_EMAIL
         self.from_name = Config.FROM_NAME
         self.batch_size = Config.EMAIL_BATCH_SIZE
@@ -43,34 +44,22 @@ class EmailSender:
         except Exception as e:
             raise Exception(f"Template rendering failed for {subscriber.email}: {str(e)}")
         
-        # Set mailer configuration
-        mail_from = {
-            "name": self.from_name,
-            "email": self.from_email,
+        # Create SendGrid message
+        message = Mail(
+            from_email=(self.from_email, self.from_name),
+            to_emails=subscriber.email,
+            subject=campaign.subject,
+            html_content=html_content,
+            plain_text_content=text_content
+        )
+        
+        # Add custom tracking
+        message.custom_args = {
+            'campaign_id': str(campaign.id),
+            'subscriber_id': str(subscriber.id)
         }
         
-        recipients = [
-            {
-                "name": subscriber.name or subscriber.email.split('@')[0],
-                "email": subscriber.email,
-            }
-        ]
-        
-        # Create MailerSend message
-        self.mailer.set_mail_from(mail_from, recipients)
-        self.mailer.set_subject(campaign.subject)
-        self.mailer.set_html_content(html_content)
-        
-        if text_content:
-            self.mailer.set_plain_text_content(text_content)
-        
-        # Add custom headers for tracking
-        self.mailer.set_headers({
-            "X-Campaign-Id": str(campaign.id),
-            "X-Subscriber-Id": str(subscriber.id)
-        })
-        
-        return self.mailer
+        return message
     
     def send_single_email(self, subscriber, campaign):
         """Send single email to subscriber"""
@@ -79,18 +68,13 @@ class EmailSender:
             message = self.create_email_message(subscriber, campaign)
             
             # Send email
-            response = self.mailer.send()
-            
-            # Extract message ID from response
-            message_id = None
-            if response and isinstance(response, dict):
-                message_id = response.get('data', {}).get('message_id')
+            response = self.sg.send(message)
             
             # Log the send attempt
             email_log = EmailLog(
                 subscriber_id=subscriber.id,
                 campaign_id=campaign.id,
-                sendgrid_message_id=message_id,  # Keep field name for compatibility
+                sendgrid_message_id=response.headers.get('X-Message-Id'),
                 status='sent',
                 sent_at=datetime.utcnow()
             )
@@ -101,8 +85,8 @@ class EmailSender:
             
             return {
                 'success': True,
-                'message_id': message_id,
-                'status_code': 200
+                'message_id': response.headers.get('X-Message-Id'),
+                'status_code': response.status_code
             }
             
         except Exception as e:
