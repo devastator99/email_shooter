@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unsubscribed - Email Shooter</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .unsubscribe-card {
+            max-width: 500px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card shadow unsubscribe-card">
+            <div class="card-body py-5">
+                <div class="mb-4">
+                    <i class="fas fa-envelope-open-text fa-4x text-success"></i>
+                </div>
+                
+                <h2 class="card-title mb-3">Successfully Unsubscribed</h2>
+                
+                <p class="text-muted mb-4">
+                    You have been successfully removed from our mailing list. 
+                    We're sorry to see you go!
+                </p>
+                
+                <div class="alert alert-info">
+                    <strong>Email:</strong> {{ subscriber.email }}<br>
+                    <strong>Date:</strong> {{ moment().format('MMMM Do, YYYY') }}
+                </div>
+                
+                <p class="text-muted small">
+                    If you change your mind, you can always subscribe again through our website.
+                    This action cannot be undone.
+                </p>
+                
+                <div class="mt-4">
+                    <a href="/" class="btn btn-primary">Return to Website</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Create Campaign - Email Shooter{% endblock %}
+
+{% block page_title %}Create Campaign{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Campaign Details</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="campaignForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control") }}
+                        {% if form.name.errors %}
+                            <div class="text-danger">
+                                {% for error in form.name.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.subject.label(class="form-label") }}
+                        {{ form.subject(class="form-control") }}
+                        {% if form.subject.errors %}
+                            <div class="text-danger">
+                                {% for error in form.subject.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.template_id.label(class="form-label") }}
+                        {{ form.template_id(class="form-select") }}
+                        {% if form.template_id.errors %}
+                            <div class="text-danger">
+                                {% for error in form.template_id.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.scheduled_at.label(class="form-label") }}
+                        {{ form.scheduled_at(class="form-control") }}
+                        <small class="form-text text-muted">Leave empty to send immediately</small>
+                        {% if form.scheduled_at.errors %}
+                            <div class="text-danger">
+                                {% for error in form.scheduled_at.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('campaigns') }}" class="btn btn-secondary">Cancel</a>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary me-2" onclick="sendTestEmail()">
+                                <i class="fas fa-paper-plane me-1"></i> Send Test
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> {{ 'Schedule' if form.scheduled_at.data else 'Create' }} Campaign
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Template Preview</h6>
+            </div>
+            <div class="card-body">
+                <div id="templatePreview" class="border rounded p-3" style="min-height: 200px; background-color: #f8f9fa;">
+                    <p class="text-muted">Select a template to preview</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Available Variables</h6>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    <p>You can use these variables in your templates:</p>
+                    <ul class="list-unstyled">
+                        <li><code>{{ "{{ name }}" }}</code> - Subscriber name</li>
+                        <li><code>{{ "{{ email }}" }}</code> - Subscriber email</li>
+                        <li><code>{{ "{{ custom_message }}" }}</code> - Custom message</li>
+                        <li><code>{{ "{{ subject }}" }}</code> - Campaign subject</li>
+                        <li><code>{{ "{{ from_name }}" }}</code> - From name</li>
+                        <li><code>{{ "{{ unsubscribe_url }}" }}</code> - Unsubscribe link</li>
+                    </ul>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Email Modal -->
+<div class="modal fade" id="testEmailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Send Test Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="testEmailForm">
+                    <div class="mb-3">
+                        <label for="testEmail" class="form-label">Test Email Address</label>
+                        <input type="email" class="form-control" id="testEmail" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="sendTestEmailConfirm()">Send Test</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadTemplatePreview(templateId) {
+    if (!templateId) {
+        document.getElementById('templatePreview').innerHTML = '<p class="text-muted">Select a template to preview</p>';
+        return;
+    }
+    
+    fetch(`/api/template/${templateId}/preview`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.html) {
+                document.getElementById('templatePreview').innerHTML = data.html;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading template preview:', error);
+        });
+}
+
+function sendTestEmail() {
+    const modal = new bootstrap.Modal(document.getElementById('testEmailModal'));
+    modal.show();
+}
+
+function sendTestEmailConfirm() {
+    const testEmail = document.getElementById('testEmail').value;
+    const formData = new FormData(document.getElementById('campaignForm'));
+    
+    // Convert FormData to JSON
+    const data = {};
+    formData.forEach((value, key) => {
+        data[key] = value;
+    });
+    
+    fetch('/api/send-test', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            ...data,
+            test_email: testEmail
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Test email sent successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('testEmailModal')).hide();
+        } else {
+            alert('Error sending test email: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error sending test email: ' + error);
+    });
+}
+
+// Load template preview when selection changes
+document.getElementById('template_id').addEventListener('change', function() {
+    loadTemplatePreview(this.value);
+});
+
+// Load initial preview
+document.addEventListener('DOMContentLoaded', function() {
+    const templateSelect = document.getElementById('template_id');
+    if (templateSelect.value) {
+        loadTemplatePreview(templateSelect.value);
+    }
+});
+</script>
+{% endblock %}

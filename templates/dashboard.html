@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Email Shooter{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Stats Cards -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Subscribers
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_subscribers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Campaigns
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_campaigns }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-paper-plane fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Emails Sent
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_emails_sent }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-envelope fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Avg. Open Rate
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "%.1f"|format(stats.avg_open_rate) }}%</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-eye fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Campaigns -->
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Campaigns</h6>
+                <a href="{{ url_for('campaigns') }}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_campaigns %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Sent</th>
+                                    <th>Open Rate</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for campaign in recent_campaigns %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('view_campaign', id=campaign.id) }}">{{ campaign.name }}</a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ get_status_color(campaign.status) }} status-badge">
+                                            {{ campaign.status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ campaign.emails_sent }}/{{ campaign.total_recipients }}</td>
+                                    <td>
+                                        {% if campaign.emails_sent > 0 %}
+                                            {{ "%.1f"|format(campaign.open_rate) }}%
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ campaign.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-paper-plane fa-3x text-gray-300 mb-3"></i>
+                        <p class="text-muted">No campaigns yet. <a href="{{ url_for('create_campaign') }}">Create your first campaign</a>.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('create_campaign') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Create Campaign
+                    </a>
+                    <a href="{{ url_for('import_subscribers') }}" class="btn btn-success">
+                        <i class="fas fa-upload me-2"></i>Import Subscribers
+                    </a>
+                    <a href="{{ url_for('templates') }}" class="btn btn-info">
+                        <i class="fas fa-file-alt me-2"></i>Manage Templates
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">System Status</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>SendGrid API</span>
+                        <span class="badge bg-{{ 'success' if config.sendgrid_configured else 'danger' }}">
+                            {{ 'Connected' if config.sendgrid_configured else 'Not Configured' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Database</span>
+                        <span class="badge bg-success">Connected</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Scheduler</span>
+                        <span class="badge bg-{{ 'success' if config.scheduler_enabled else 'secondary' }}">
+                            {{ 'Enabled' if config.scheduler_enabled else 'Disabled' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

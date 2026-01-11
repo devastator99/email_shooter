@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Subscribers - Email Shooter{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{{ url_for('import_subscribers') }}" class="btn btn-success">
+        <i class="fas fa-upload me-1"></i> Import Subscribers
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Subscribers ({{ subscribers.total }} total)</h6>
+    </div>
+    <div class="card-body">
+        {% if subscribers.items %}
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Custom Message</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subscriber in subscribers.items %}
+                        <tr>
+                            <td>{{ subscriber.name or 'N/A' }}</td>
+                            <td>{{ subscriber.email }}</td>
+                            <td>
+                                {% if subscriber.custom_message %}
+                                    {{ subscriber.custom_message[:50] }}{% if subscriber.custom_message|length > 50 %}...{% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if subscriber.is_active else 'danger' }} status-badge">
+                                    {{ 'Active' if subscriber.is_active else 'Inactive' }}
+                                </span>
+                            </td>
+                            <td>{{ subscriber.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td class="table-actions">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button class="btn btn-outline-primary" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if subscribers.pages > 1 %}
+            <nav aria-label="Subscribers pagination">
+                <ul class="pagination justify-content-center">
+                    {% if subscribers.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('subscribers', page=subscribers.prev_num) }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in subscribers.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != subscribers.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('subscribers', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if subscribers.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('subscribers', page=subscribers.next_num) }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-4x text-gray-300 mb-3"></i>
+                <h5 class="text-muted">No subscribers found</h5>
+                <p class="text-muted">Import your first subscriber list to get started.</p>
+                <a href="{{ url_for('import_subscribers') }}" class="btn btn-success">
+                    <i class="fas fa-upload me-2"></i>Import Subscribers
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
