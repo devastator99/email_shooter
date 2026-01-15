@@ -2,14 +2,14 @@ import os
 import time
 from datetime import datetime
 from flask import current_app
-from mailersend import MailerSendClient, Email
+from mailersend import emails
 from jinja2 import Template
 from models import db, Subscriber, Campaign, EmailLog
 from config import Config
 
 class EmailSender:
     def __init__(self):
-        self.client = MailerSendClient(api_key=Config.MAILERSEND_API_KEY)
+        self.mailer = emails.NewEmail(Config.MAILERSEND_API_KEY)
         self.from_email = Config.FROM_EMAIL
         self.from_name = Config.FROM_NAME
         self.batch_size = Config.EMAIL_BATCH_SIZE
@@ -43,21 +43,34 @@ class EmailSender:
         except Exception as e:
             raise Exception(f"Template rendering failed for {subscriber.email}: {str(e)}")
         
-        # Create MailerSend email
-        mailer = Email()
-        mailer.set_from(self.from_email, self.from_name)
-        mailer.add_recipient(subscriber.email, subscriber.name or subscriber.email.split('@')[0])
-        mailer.set_subject(campaign.subject)
-        mailer.set_html(html_content)
+        # Set mailer configuration
+        mail_from = {
+            "name": self.from_name,
+            "email": self.from_email,
+        }
+        
+        recipients = [
+            {
+                "name": subscriber.name or subscriber.email.split('@')[0],
+                "email": subscriber.email,
+            }
+        ]
+        
+        # Create MailerSend message
+        self.mailer.set_mail_from(mail_from, recipients)
+        self.mailer.set_subject(campaign.subject)
+        self.mailer.set_html_content(html_content)
         
         if text_content:
-            mailer.set_text(text_content)
+            self.mailer.set_plain_text_content(text_content)
         
         # Add custom headers for tracking
-        mailer.add_header('X-Campaign-Id', str(campaign.id))
-        mailer.add_header('X-Subscriber-Id', str(subscriber.id))
+        self.mailer.set_headers({
+            "X-Campaign-Id": str(campaign.id),
+            "X-Subscriber-Id": str(subscriber.id)
+        })
         
-        return mailer
+        return self.mailer
     
     def send_single_email(self, subscriber, campaign):
         """Send single email to subscriber"""
@@ -66,12 +79,12 @@ class EmailSender:
             message = self.create_email_message(subscriber, campaign)
             
             # Send email
-            response = self.client.email.send(message)
+            response = self.mailer.send()
             
             # Extract message ID from response
             message_id = None
-            if response and hasattr(response, 'data'):
-                message_id = response.data.get('message_id')
+            if response and isinstance(response, dict):
+                message_id = response.get('data', {}).get('message_id')
             
             # Log the send attempt
             email_log = EmailLog(
